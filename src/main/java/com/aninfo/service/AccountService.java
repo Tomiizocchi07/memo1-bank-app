@@ -3,6 +3,7 @@ package com.aninfo.service;
 import com.aninfo.exceptions.DepositNegativeSumException;
 import com.aninfo.exceptions.InsufficientFundsException;
 import com.aninfo.model.Account;
+import com.aninfo.model.Transaction;
 import com.aninfo.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,18 @@ public class AccountService {
     }
 
     @Transactional
+    public void deleteTransaction(Long cbu, Long id){
+        Account account = accountRepository.findAccountByCbu(cbu);
+        for(Transaction transaction : account.getTransactions()){
+            if(transaction.getId().equals(id)){
+                account.getTransactions().remove(transaction);
+                break;
+            }
+        }
+        accountRepository.save(account);
+    }
+
+    @Transactional
     public Account withdraw(Long cbu, Double sum) {
         Account account = accountRepository.findAccountByCbu(cbu);
 
@@ -57,11 +70,15 @@ public class AccountService {
         if (sum <= 0) {
             throw new DepositNegativeSumException("Cannot deposit negative sums");
         }
-
+        double extra = 0;
+        if(sum >= 5000){
+            extra = 500;
+        } else if ( sum >= 2000) {
+            extra = (sum * 10) / 100;
+        }
         Account account = accountRepository.findAccountByCbu(cbu);
-        account.setBalance(account.getBalance() + sum);
+        account.setBalance(account.getBalance() + sum + extra);
         accountRepository.save(account);
-
         return account;
     }
 
